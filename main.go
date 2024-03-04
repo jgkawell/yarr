@@ -47,7 +47,7 @@ func readConfig() config {
 		c.address = "0.0.0.0:7070"
 	}
 	if c.database == "" {
-		log.Fatal("database URI is required")
+		log.Fatal("Error YARR_DB is not set. Please set env var YARR_DB to postgres URI.")
 	}
 	auth := os.Getenv("YARR_AUTH")
 	if auth != "" {
