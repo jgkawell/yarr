@@ -5,7 +5,7 @@ on:
     types: [published]
     
 env:
-  REGISTRY: ghcr.io
+  REGISTRY: ${{ vars.REGISTRY || 'docker.io' }}
   IMAGE_NAME: ${{ github.repository }}
   TARGET_PLATFORMS: linux/amd64,linux/arm64
 
@@ -21,8 +21,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME || (env.REGISTRY == 'ghcr.io' && github.actor) }}
+          password: ${{ secrets.DOCKER_PASSWORD || (env.REGISTRY == 'ghcr.io' && secrets.GITHUB_TOKEN) }}
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
