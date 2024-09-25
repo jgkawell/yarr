@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -42,17 +43,35 @@ func (s *ItemStatus) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+type MediaLink struct {
+	URL         string `json:"url"`
+	Type        string `json:"type"`
+	Description string `json:"description,omitempty"`
+}
+
+type MediaLinks []MediaLink
+
+func (m *MediaLinks) Scan(src any) error {
+	if data, ok := src.([]byte); ok {
+		return json.Unmarshal(data, m)
+	}
+	return nil
+}
+
+func (m MediaLinks) Value() (driver.Value, error) {
+	return json.Marshal(m)
+}
+
 type Item struct {
-	Id       int64      `json:"id"`
-	GUID     string     `json:"guid"`
-	FeedId   int64      `json:"feed_id"`
-	Title    string     `json:"title"`
-	Link     string     `json:"link"`
-	Content  string     `json:"content,omitempty"`
-	Date     time.Time  `json:"date"`
-	Status   ItemStatus `json:"status"`
-	ImageURL *string    `json:"image"`
-	AudioURL *string    `json:"podcast_url"`
+	Id         int64      `json:"id"`
+	GUID       string     `json:"guid"`
+	FeedId     int64      `json:"feed_id"`
+	Title      string     `json:"title"`
+	Link       string     `json:"link"`
+	Content    string     `json:"content,omitempty"`
+	Date       time.Time  `json:"date"`
+	Status     ItemStatus `json:"status"`
+	MediaLinks MediaLinks `json:"media_links"`
 }
 
 type ItemFilter struct {
@@ -108,13 +127,13 @@ func (s *Storage) CreateItems(items []Item) bool {
 		_, err = tx.Exec(`
 			insert into items (
 				guid, feed_id, title, link, date,
-				content, image, podcast_url,
+				content, media_links,
 				date_arrived, status
 			)
 			values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 			on conflict (feed_id, guid) do nothing`,
 			item.GUID, item.FeedId, item.Title, item.Link, item.Date,
-			item.Content, item.ImageURL, item.AudioURL,
+			item.Content, item.MediaLinks,
 			now, UNREAD,
 		)
 		if err != nil {
@@ -233,7 +252,7 @@ func (s *Storage) ListItems(filter ItemFilter, limit int, newestFirst bool, with
 		order = "i.id desc"
 	}
 
-	selectCols := "i.id, i.guid, i.feed_id, i.title, i.link, i.date, i.status, i.image, i.podcast_url"
+	selectCols := "i.id, i.guid, i.feed_id, i.title, i.link, i.date, i.status, i.media_links"
 	if withContent {
 		selectCols += ", i.content"
 	} else {
@@ -256,7 +275,7 @@ func (s *Storage) ListItems(filter ItemFilter, limit int, newestFirst bool, with
 		err = rows.Scan(
 			&x.Id, &x.GUID, &x.FeedId,
 			&x.Title, &x.Link, &x.Date,
-			&x.Status, &x.ImageURL, &x.AudioURL, &x.Content,
+			&x.Status, &x.MediaLinks, &x.Content,
 		)
 		if err != nil {
 			log.Print(err)
@@ -272,12 +291,12 @@ func (s *Storage) GetItem(id int64) *Item {
 	err := s.db.QueryRow(`
 		select
 			i.id, i.guid, i.feed_id, i.title, i.link, i.content,
-			i.date, i.status, i.image, i.podcast_url
+			i.date, i.status, i.media_links
 		from items i
 		where i.id = $1
 	`, id).Scan(
 		&i.Id, &i.GUID, &i.FeedId, &i.Title, &i.Link, &i.Content,
-		&i.Date, &i.Status, &i.ImageURL, &i.AudioURL,
+		&i.Date, &i.Status, &i.MediaLinks,
 	)
 	if err != nil {
 		log.Print(err)
