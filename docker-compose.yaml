@@ -1,6 +1,6 @@
 services:
   yarr:
-    image: jgkawell/yarr:dev
+    image: jgkawell/yarr:latest
     restart: unless-stopped
     depends_on:
       - db
