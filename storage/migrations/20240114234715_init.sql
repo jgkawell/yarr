@@ -8,6 +8,8 @@ create collation nocase (
 	deterministic = false
 );
 
+-- m01_initial -> m08_normalize_datetime (from upstream)
+
 create table if not exists folders (
 	id             serial primary key,
 	title          text not null,

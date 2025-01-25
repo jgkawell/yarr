@@ -7,6 +7,7 @@ import (
 
 	"github.com/jgkawell/yarr/server"
 	"github.com/jgkawell/yarr/storage"
+	"github.com/jgkawell/yarr/worker"
 )
 
 var Version string = "0.0"
@@ -30,6 +31,7 @@ func main() {
 		log.Fatal("Failed to initialise database: ", err)
 	}
 
+	worker.SetVersion(Version)
 	srv := server.NewServer(store, c.address)
 	srv.Username = c.username
 	srv.Password = c.password
