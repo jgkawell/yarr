@@ -169,7 +169,6 @@ func TestListItems(t *testing.T) {
 	}
 
 	// filter by search
-	db.SyncSearch()
 	search1 := "title111"
 	have = getItemGuids(db.ListItems(ItemFilter{Search: &search1}, 4, true, false))
 	want = []string{"item111"}
