@@ -7,8 +7,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/jgkawell/yarr/content/htmlutil"
 )
 
 type ItemStatus int
@@ -155,14 +153,8 @@ func listQueryPredicate(filter ItemFilter, newestFirst bool) (string, []interfac
 		index++
 	}
 	if filter.Search != nil {
-		words := strings.Fields(*filter.Search)
-		terms := make([]string, len(words))
-		for idx, word := range words {
-			terms[idx] = word + "*"
-		}
-
-		cond = append(cond, fmt.Sprintf("i.search_rowid in (select rowid from search where search match $%d)", index))
-		args = append(args, strings.Join(terms, " "))
+		cond = append(cond, fmt.Sprintf("i.search @@ to_tsquery($%d)", index))
+		args = append(args, *filter.Search)
 		index++
 	}
 	if filter.After != nil {
@@ -342,44 +334,6 @@ func (s *Storage) FeedStats() []FeedStat {
 		result = append(result, stat)
 	}
 	return result
-}
-
-func (s *Storage) SyncSearch() {
-	rows, err := s.db.Query(`
-		select id, title, content
-		from items
-		where search_rowid is null;
-	`)
-	if err != nil {
-		log.Print(err)
-		return
-	}
-
-	items := make([]Item, 0)
-	for rows.Next() {
-		var item Item
-		rows.Scan(&item.Id, &item.Title, &item.Content)
-		items = append(items, item)
-	}
-
-	for _, item := range items {
-		result, err := s.db.Exec(`
-			insert into search (title, description, content) values ($1, '', $2)`,
-			item.Title, htmlutil.ExtractText(item.Content),
-		)
-		if err != nil {
-			log.Print(err)
-			return
-		}
-		if numrows, err := result.RowsAffected(); err == nil && numrows == 1 {
-			if rowId, err := result.LastInsertId(); err == nil {
-				s.db.Exec(
-					`update items set search_rowid = $1 where id = $2`,
-					rowId, item.Id,
-				)
-			}
-		}
-	}
 }
 
 var (
