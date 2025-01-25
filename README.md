@@ -6,13 +6,25 @@ This is a fork of [the original](https://github.com/nkanaev/yarr) which was desi
 
 ![screenshot](docs/promo.png)
 
-## usage
+## Usage
 
-**yarr** requires a Postgres database to use. Once you have that set up the easiest way to use **yarr** is to run it in Docker:
+### Docker Compose
+
+If you want to just get started right away, simply use the included `docker-compose.yaml` file:
+
+```shell
+docker compose up -d
+```
+
+### Separate Postgres Instance
+
+If you already have a Postgres instance, you can run the Docker container with any URI you please:
 
 ```sh
 docker run -it -e YARR_DB=your_postgres_uri_here -p 7070:7070 jgkawell/yarr:latest
 ```
+
+### Access
 
 Then go to [http://localhost:7070](http://localhost:7070) or [http://server_ip_address:7070](http://server_ip_address:7070) to start using it.
 
