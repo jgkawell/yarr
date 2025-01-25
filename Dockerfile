@@ -1,17 +1,19 @@
-FROM --platform=$BUILDPLATFORM golang:alpine AS build
+FROM --platform=$BUILDPLATFORM golang:1.21-alpine AS build
 ARG TARGETOS
 ARG TARGETARCH
 
 WORKDIR /app
 
-COPY . .
+COPY go.mod go.mod
+COPY go.sum go.sum
 
 RUN go mod download
 RUN go mod verify
 
+COPY . .
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o bin/yarr .
 
-FROM alpine:latest
+FROM alpine:3
 
 RUN apk add --no-cache ca-certificates && update-ca-certificates
 

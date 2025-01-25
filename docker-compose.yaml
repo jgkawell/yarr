@@ -1,0 +1,23 @@
+services:
+  yarr:
+    image: jgkawell/yarr:dev
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - 7070:7070
+    environment:
+      - YARR_DB=postgres://postgres:postgres@db/yarr
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    volumes:
+      - "yarr-database:/var/lib/postgresql/data/"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: yarr
+
+volumes:
+  yarr-database:
